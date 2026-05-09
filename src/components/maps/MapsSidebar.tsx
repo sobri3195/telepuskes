@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
-  Ambulance,
   Building2,
   ChevronLeft,
   ChevronRight,
@@ -114,11 +113,19 @@ export function useFilteredMapLocations() {
 export function MapsSidebar({ onOpenChat, onRequestAccess }: { onOpenChat?: () => void; onRequestAccess?: () => void }) {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const isCollapsed = useSidebarMapStore((s) => s.isCollapsed);
   const selectedMarkerId = useSidebarMapStore((s) => s.selectedMarkerId);
   const sidebarMode = useSidebarMapStore((s) => s.sidebarMode);
   const setSidebarMode = useSidebarMapStore((s) => s.setSidebarMode);
-  const openChat = () => (onOpenChat ? onOpenChat() : navigate('/app/messages'));
+  const openChat = () => {
+    setSidebarMode('chat-preview');
+    if (onOpenChat) {
+      onOpenChat();
+      return;
+    }
+    if (pathname !== '/app/maps') navigate('/app/messages');
+  };
   const requestAccess = () => {
     onRequestAccess?.();
     setSidebarMode('access-request');
@@ -147,16 +154,14 @@ export function MapsSidebar({ onOpenChat, onRequestAccess }: { onOpenChat?: () =
           <SidebarSearch locations={locations} />
           <div className="grid grid-cols-3 gap-2">
             <Button size="sm" variant={sidebarMode === 'filter' ? 'default' : 'outline'} onClick={() => setSidebarMode('filter')}>Filter</Button>
-            <Button size="sm" variant={sidebarMode === 'chat-preview' ? 'default' : 'outline'} onClick={() => setSidebarMode('chat-preview')}>Chat</Button>
+            <Button size="sm" variant={sidebarMode === 'chat-preview' ? 'default' : 'outline'} onClick={openChat}>Chat</Button>
             <Button size="sm" variant="destructive" onClick={() => { setShowOnlyEmergencyFacilities(true); setSidebarMode('emergency'); }}>
               Darurat
             </Button>
           </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <SidebarMiniMap locations={locations.slice(0, 8)} selectedLocation={selectedLocation} />
           {sidebarMode === 'filter' && <SidebarFilter />}
-          {sidebarMode === 'chat-preview' && <SidebarChatPreview onRequestAccess={onRequestAccess} />}
           {sidebarMode === 'access-request' && <SidebarAccessRequestList />}
           {(sidebarMode === 'location-detail' || sidebarMode === 'emergency') && selectedLocation && (
             <SidebarSelectedLocationPanel location={selectedLocation} onOpenChat={openChat} onRequestAccess={requestAccess} />
@@ -246,23 +251,10 @@ export function SidebarFilter() {
   );
 }
 
-export function SidebarMiniMap({ locations, selectedLocation }: { locations: MapLocation[]; selectedLocation?: MapLocation }) {
-  const setSelectedMarkerId = useSidebarMapStore((s) => s.setSelectedMarkerId);
-  return (
-    <button className="mb-4 hidden w-full overflow-hidden rounded-3xl border bg-gradient-to-br from-sky-100 via-white to-emerald-50 p-4 text-left shadow-sm md:block" onClick={() => selectedLocation && setSelectedMarkerId(selectedLocation.id)}>
-      <div className="mb-2 flex items-center justify-between"><b>Mini Map Preview</b><Badge>{selectedLocation?.city ?? 'Indonesia'}</Badge></div>
-      <div className="relative h-32 rounded-2xl bg-[radial-gradient(circle_at_30%_45%,#38bdf8_0_4px,transparent_5px),radial-gradient(circle_at_55%_55%,#22c55e_0_4px,transparent_5px),radial-gradient(circle_at_72%_40%,#ef4444_0_4px,transparent_5px)] bg-sky-50">
-        {locations.map((location, index) => <span key={location.id} className={`absolute h-3 w-3 rounded-full border-2 border-white ${location.id === selectedLocation?.id ? 'bg-red-500 ring-4 ring-red-100' : 'bg-skyforce'}`} style={{ left: `${12 + (index * 13) % 74}%`, top: `${20 + (index * 19) % 58}%` }} />)}
-      </div>
-      <p className="mt-2 text-xs text-slate-500">Klik preview untuk fokus ke peta utama.</p>
-    </button>
-  );
-}
-
 export function SidebarLocationList({ locations, onOpenChat, onRequestAccess }: { locations: MapLocation[]; onOpenChat?: () => void; onRequestAccess?: () => void }) {
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between"><h3 className="font-semibold">Mini List Lokasi</h3><Badge>{locations.length} hasil</Badge></div>
+      <div className="flex items-center justify-between"><h3 className="font-semibold">Daftar Lokasi/Faskes</h3><Badge>{locations.length} hasil</Badge></div>
       {locations.slice(0, 12).map((location) => <SidebarLocationItem key={location.id} location={location} onOpenChat={onOpenChat} onRequestAccess={onRequestAccess} />)}
     </section>
   );
@@ -388,22 +380,10 @@ export function MobileMapsBottomSheet({ onOpenChat, onRequestAccess }: { onOpenC
   return (
     <div className="fixed inset-x-0 bottom-14 z-30 rounded-t-3xl border bg-white p-4 shadow-2xl lg:hidden">
       <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-slate-300" />
-      <div className="mb-3 flex items-center justify-between"><b>Maps Sidebar</b><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => setSidebarMode('search')}><Search className="h-4 w-4" /></Button><Button size="sm" variant="outline" onClick={() => setSidebarMode('filter')}>Filter</Button><Button size="sm" variant="ghost" onClick={() => setSidebarMode('navigation')}><X className="h-4 w-4" /></Button></div></div>
+      <div className="mb-3 flex items-center justify-between"><b>Command Center Maps</b><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => setSidebarMode('search')}><Search className="h-4 w-4" /></Button><Button size="sm" variant="outline" onClick={() => setSidebarMode('filter')}>Filter</Button><Button size="sm" variant="ghost" onClick={() => setSidebarMode('navigation')}><X className="h-4 w-4" /></Button></div></div>
       {sidebarMode === 'filter' && <SidebarFilter />}
-      {sidebarMode === 'chat-preview' && <SidebarChatPreview onRequestAccess={onRequestAccess} />}
       {selected && sidebarMode === 'location-detail' && <SidebarSelectedLocationPanel location={selected} onOpenChat={onOpenChat} onRequestAccess={onRequestAccess} />}
       {(sidebarMode === 'search' || sidebarMode === 'navigation' || sidebarMode === 'emergency') && <><SidebarSearch locations={locations} /><div className="mt-3 max-h-[42vh] overflow-auto"><SidebarLocationList locations={locations} onOpenChat={onOpenChat} onRequestAccess={onRequestAccess} /></div></>}
     </div>
-  );
-}
-
-export function SidebarMapMarker({ location, index }: { location: MapLocation; index: number }) {
-  const selectedMarkerId = useSidebarMapStore((s) => s.selectedMarkerId);
-  const setSelectedMarkerId = useSidebarMapStore((s) => s.setSelectedMarkerId);
-  const isSelected = selectedMarkerId === location.id;
-  return (
-    <button title={location.name} onClick={() => setSelectedMarkerId(location.id)} className={`absolute grid h-8 w-8 place-items-center rounded-full border-2 border-white text-white shadow-lg transition ${isSelected ? 'z-20 scale-125 bg-red-600 ring-4 ring-red-100' : location.hasEmergency ? 'bg-red-500' : 'bg-skyforce hover:scale-110'}`} style={{ left: `${8 + (index * 17) % 82}%`, top: `${12 + (index * 23) % 70}%` }}>
-      {location.hasEmergency ? <Ambulance className="h-4 w-4" /> : <Map className="h-4 w-4" />}
-    </button>
   );
 }
