@@ -1,0 +1,2 @@
+import { Badge } from '@/components/ui/badge';import type { TriagePriority } from '@/types';
+export function TriageBadge({priority}:{priority:TriagePriority}){const map={merah:'Prioritas Merah',kuning:'Prioritas Kuning',hijau:'Prioritas Hijau'};const cls={merah:'bg-red-100 text-red-700',kuning:'bg-amber-100 text-amber-700',hijau:'bg-emerald-100 text-emerald-700'};return <Badge className={cls[priority]}>{map[priority]}</Badge>}

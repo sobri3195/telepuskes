@@ -1,0 +1,10 @@
+import { facilities, initialChats, initialConsultations, units, users } from '@/data/mockData';import type { Chat, Consultation, NeedSubmission, User } from '@/types';
+const delay=<T,>(data:T,ms=350)=>new Promise<T>(r=>setTimeout(()=>r(data),ms));
+export const authService={login:async(email:string,password:string)=>{if(password!=='password')throw new Error('Password dummy salah');const user=users.find(u=>u.email===email);if(!user)throw new Error('Akun dummy tidak ditemukan');return delay(user);},register:(user:User)=>delay(user)};
+export const patientService={profile:(id:string)=>delay(users.find(u=>u.id===id)??users[0])};
+export const organizationService={list:()=>delay(units),detail:(id:string)=>delay(units.find(u=>u.id===id))};
+export const facilityService={list:()=>delay(facilities),nearest:()=>delay(facilities.slice().sort((a,b)=>a.jarakKm-b.jarakKm)[0])};
+export const patientNeedService={submit:(need:NeedSubmission)=>delay(need)};
+export const consultationService={list:()=>delay(initialConsultations),create:(c:Consultation)=>delay(c),detail:(id:string)=>delay(initialConsultations.find(c=>c.id===id))};
+export const chatService={list:()=>delay(initialChats),send:(chat:Chat)=>delay(chat)};
+export const reportService={stats:()=>delay({total:42,merah:4,kuning:13,hijau:25,needs:12,units:units.length,facilities:facilities.length}),csv:async(rows:Record<string,unknown>[])=>delay(rows)};

@@ -1,0 +1,1 @@
+import { DoctorQueue } from '@/components/doctor/DoctorQueue';export function DoctorDashboardPage(){return <div className="space-y-4"><h1 className="text-2xl font-bold">Dashboard Dokter</h1><DoctorQueue/></div>}

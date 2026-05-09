@@ -1,0 +1,1 @@
+import { Card, CardContent } from '@/components/ui/card';export const RecommendedActionCard=({title,body}:{title:string;body:string})=><Card><CardContent className="pt-5"><b>{title}</b><p className="mt-1 text-sm text-muted-foreground">{body}</p></CardContent></Card>;
