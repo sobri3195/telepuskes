@@ -1,0 +1,1 @@
+import { UnitDirectory } from '@/components/directory/UnitDirectory';export function UnitsDirectoryPage(){return <div className="space-y-4"><h1 className="text-2xl font-bold">Direktori Jajaran & Faskes TNI AU</h1><UnitDirectory/></div>}

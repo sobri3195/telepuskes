@@ -1,0 +1,1 @@
+import { create } from 'zustand';import { facilities } from '@/data/mockData';import type { Facility } from '@/types';export const useFacilityStore=create<{facilities:Facility[];setFacilities:(f:Facility[])=>void}>(set=>({facilities,setFacilities:f=>set({facilities:f})}));

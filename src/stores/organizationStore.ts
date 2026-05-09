@@ -1,0 +1,1 @@
+import { create } from 'zustand';import { units } from '@/data/mockData';import type { Unit } from '@/types';export const useOrganizationStore=create<{units:Unit[];setUnits:(u:Unit[])=>void}>(set=>({units,setUnits:u=>set({units:u})}));

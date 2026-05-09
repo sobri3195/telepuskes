@@ -1,0 +1,11 @@
+export type Role='Pasien'|'Dokter'|'Perawat/Tenaga Kesehatan'|'Admin Klinik/Satuan'|'Admin Puskesau/Pusat'|'Super Admin';
+export type TriagePriority='merah'|'kuning'|'hijau';
+export type User={id:string;name:string;email:string;role:Role;unitId?:string;facilityId?:string;status?:string;phone?:string};
+export type Unit={id:string;nama:string;jenis:string;kotamaInduk:string;alamat:string;kota:string;provinsi:string;nomorKontak:string;layananKesehatan:string[];jamOperasional:string;latitude?:number;longitude?:number;status:'Aktif'|'Terbatas'};
+export type Facility=Unit & {dokterTersedia:number;jarakKm:number};
+export type PatientNeedType='Konsultasi dokter'|'Keluhan mendadak'|'Pertolongan darurat'|'Kontrol ulang'|'Resep ulang'|'Tanya obat'|'Rujukan ke faskes/RSAU/RSPAU'|'Konsultasi gigi'|'Kesehatan penerbangan'|'Konsultasi psikologi/mental'|'Upload hasil lab/radiologi'|'Cari fasilitas kesehatan TNI AU'|'Hubungi admin kesehatan satuan';
+export type NeedSubmission={id:string;type:PatientNeedType;answers:Record<string,string|boolean>;attachments:string[];triage:TriageResult;createdAt:string;facilityId?:string};
+export type TriageResult={priority:TriagePriority;reason:string;recommendation:string;facilityId?:string};
+export type Consultation={id:string;needId:string;patientName:string;doctorName:string;title:string;priority:TriagePriority;status:'Menunggu'|'Aktif'|'Selesai'|'Darurat';createdAt:string;summary:string;soap?:string;prescription?:string;referral?:string};
+export type Message={id:string;chatId:string;sender:'patient'|'doctor'|'admin'|'system';text:string;timestamp:string;status:'terkirim'|'dibaca';attachmentName?:string};
+export type Chat={id:string;consultationId?:string;title:string;participants:string[];priority:TriagePriority;messages:Message[]};

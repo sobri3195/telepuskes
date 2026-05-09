@@ -1,0 +1,1 @@
+import { AdminDashboard } from '@/components/admin/AdminDashboard';export function AdminDashboardPage(){return <div className="space-y-4"><h1 className="text-2xl font-bold">Dashboard Admin</h1><AdminDashboard/></div>}

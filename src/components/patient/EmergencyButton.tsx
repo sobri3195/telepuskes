@@ -1,0 +1,2 @@
+import { AlertTriangle, Phone } from 'lucide-react';import { useNavigate } from 'react-router-dom';import { Button } from '@/components/ui/button';
+export function EmergencyButton(){const nav=useNavigate();return <Button variant="destructive" className="w-full justify-center shadow-lg shadow-red-200" onClick={()=>nav('/app/needs?emergency=1')}><AlertTriangle className="h-4 w-4"/> Pertolongan Darurat <Phone className="h-4 w-4"/></Button>}

@@ -1,0 +1,1 @@
+import { Input } from '@/components/ui/input';export function AttachmentUploader({onPick}:{onPick:(name:string)=>void}){return <Input type="file" className="max-w-44" onChange={e=>{const f=e.target.files?.[0];if(f)onPick(f.name)}}/>}
