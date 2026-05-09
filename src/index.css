@@ -6,8 +6,13 @@
   .teleleaflet-marker-shell{background:transparent;border:0;}
   .teleleaflet-marker{@apply relative grid h-10 w-10 place-items-center rounded-full border-2 border-white text-sm font-bold text-white shadow-lg transition-transform;}
   .teleleaflet-marker.is-regular{@apply bg-skyforce;}
+  .teleleaflet-marker.is-unit{@apply bg-blue-600;}
   .teleleaflet-marker.is-online{@apply bg-emerald-500;}
   .teleleaflet-marker.is-emergency{@apply bg-red-600;}
+  .teleleaflet-marker.is-limited{@apply bg-amber-500;}
+  .teleleaflet-marker.is-specialist{@apply bg-violet-600;}
+  .teleleaflet-marker.is-referral{@apply bg-orange-500;}
+  .teleleaflet-marker.is-offline{@apply bg-slate-400;}
   .teleleaflet-marker.is-selected{@apply scale-125 ring-4 ring-red-100;}
   .teleleaflet-marker__pulse{@apply absolute inset-0 rounded-full opacity-30;animation:teleleaflet-pulse 1.8s ease-out infinite;background:currentColor;}
   .teleleaflet-marker__icon{@apply relative z-10 leading-none;}

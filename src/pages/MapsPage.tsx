@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Ambulance, Building2, Layers, LocateFixed, MessageSquare, Navigation, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { MilitaryHealthCommandStack } from '@/components/command/CommandCenterComponents';
 import { mapLocations, type MapLocation } from '@/data/mapLocations';
 import { MobileMapsBottomSheet, useFilteredMapLocations } from '@/components/maps/MapsSidebar';
 import { useSidebarMapStore } from '@/stores/sidebarMapStore';
@@ -52,7 +53,7 @@ function escapeHtml(value: string) {
 }
 
 function createMarkerHtml(location: MapLocation, isSelected: boolean) {
-  const tone = location.hasEmergency ? 'is-emergency' : location.hasOnlineDoctor ? 'is-online' : 'is-regular';
+  const tone = location.type === 'Rujukan Aktif' ? 'is-referral' : location.type === 'Dokter' ? 'is-specialist' : location.status === 'Offline' ? 'is-offline' : location.status.includes('terbatas') || location.status === 'Butuh koordinasi' ? 'is-limited' : location.hasEmergency ? 'is-emergency' : ['Lanud', 'Satuan'].includes(location.type) ? 'is-unit' : location.hasOnlineDoctor ? 'is-online' : 'is-regular';
   return `<span class="teleleaflet-marker ${tone} ${isSelected ? 'is-selected' : ''}" aria-label="${escapeHtml(location.name)}">
     <span class="teleleaflet-marker__pulse"></span>
     <span class="teleleaflet-marker__icon">${location.hasEmergency ? '✚' : location.type === 'Dokter' ? '👨‍⚕️' : '●'}</span>
@@ -187,8 +188,8 @@ function MapView({ onOpenChat, onRequestAccess }: { onOpenChat: () => void; onRe
       <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(15,23,42,.06),transparent_22%,transparent_76%,rgba(15,23,42,.08))]" />
       <div className="absolute left-5 top-5 z-10 max-w-sm rounded-3xl border bg-white/95 p-4 shadow-lg backdrop-blur">
         <div className="flex flex-wrap items-center gap-2"><Badge>Leaflet Indonesia</Badge><Badge variant="secondary">{locations.length} marker aktif</Badge></div>
-        <h1 className="mt-2 text-2xl font-bold">Telehealth AU Maps</h1>
-        <p className="text-sm text-slate-600">Peta Indonesia memakai Leaflet + OpenStreetMap. Marker ikut terfilter dari sidebar dan bisa diklik untuk membuka Selected Location Panel.</p>
+        <h1 className="mt-2 text-2xl font-bold">Health Command Map</h1>
+        <p className="text-sm text-slate-600">Military Health Command Map untuk faskes TNI AU, Lanud, dokter, kasus aktif, emergency, rujukan, RME ringkas, dan teleconference spesialis.</p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button size="sm" variant="destructive" onClick={() => { setShowOnlyEmergencyFacilities(true); setSidebarMode('emergency'); setSelectedMarkerId(emergencyFacilities[0]?.id); }}><Ambulance className="h-4 w-4" /> Darurat</Button>
           <Button size="sm" variant="outline" onClick={() => selected && setSelectedMarkerId(selected.id)}><LocateFixed className="h-4 w-4" /> Fokus</Button>
@@ -228,12 +229,13 @@ export function MapsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-skyforce">Command center</p>
-          <h1 className="text-2xl font-bold">Maps Sidebar</h1>
-          <p className="text-sm text-slate-500">Peta Indonesia berbasis Leaflet terintegrasi dengan search, filter, chat preview, dan akses sidebar.</p>
+          <h1 className="text-2xl font-bold">Telehealth AU Maps — Military Health Command Map</h1>
+          <p className="text-sm text-slate-500">Peta interaktif, command center kesehatan, clinical chat, RME ringkas, rujukan cepat, keamanan data militer, dan kesiapan operasional.</p>
         </div>
         {selected && <Badge className="w-fit">Marker aktif: {selected.name}</Badge>}
       </div>
       <MapView onOpenChat={() => showNotice('ChatPanel simulasi dibuka dari sidebar.')} onRequestAccess={() => showNotice('AccessRequestModal simulasi dibuka dari sidebar.')} />
+      <MilitaryHealthCommandStack selectedLocation={selected} />
       <MobileMapsBottomSheet onOpenChat={() => showNotice('Chat mobile dibuka sebagai bottom sheet.')} onRequestAccess={() => showNotice('Request akses mobile dibuka.')} />
       {toast && <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-night px-4 py-2 text-sm font-semibold text-white shadow-lg">{toast}</div>}
     </div>
