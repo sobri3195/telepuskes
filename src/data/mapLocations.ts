@@ -90,7 +90,7 @@ const baseLocations: MapLocation[] = [...facilities, ...units.slice(0, 42)].map(
   const priority = priorities[index % priorities.length];
   const accessBadge = index % 9 === 0 ? 'Darurat' : accessBadges[index % accessBadges.length];
   const hasEmergency = item.layananKesehatan.some((service) => service.toLowerCase().includes('igd')) || accessBadge === 'Darurat';
-  const staffOnline = 'dokterTersedia' in item ? item.dokterTersedia : (index % 4) + 1;
+  const staffOnline = 'dokterTersedia' in item && typeof item.dokterTersedia === 'number' ? item.dokterTersedia : (index % 4) + 1;
   const status: LocationStatus = hasEmergency
     ? 'Darurat'
     : staffOnline > 2

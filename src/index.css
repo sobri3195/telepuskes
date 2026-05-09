@@ -1,2 +1,21 @@
 @tailwind base;@tailwind components;@tailwind utilities;
 @layer base{:root{--background:210 40% 98%;--foreground:222 47% 11%;--card:0 0% 100%;--card-foreground:222 47% 11%;--primary:205 83% 34%;--primary-foreground:0 0% 100%;--secondary:210 40% 94%;--secondary-foreground:222 47% 11%;--muted:210 40% 94%;--muted-foreground:215 16% 47%;--accent:199 89% 92%;--accent-foreground:205 83% 24%;--destructive:0 84% 55%;--destructive-foreground:0 0% 100%;--border:214 32% 91%;--input:214 32% 91%;--ring:205 83% 34%;--radius:.85rem}*{@apply border-border}body{@apply bg-background text-foreground} }
+
+@layer components{
+  .leaflet-container{@apply h-full w-full font-sans;}
+  .teleleaflet-marker-shell{background:transparent;border:0;}
+  .teleleaflet-marker{@apply relative grid h-10 w-10 place-items-center rounded-full border-2 border-white text-sm font-bold text-white shadow-lg transition-transform;}
+  .teleleaflet-marker.is-regular{@apply bg-skyforce;}
+  .teleleaflet-marker.is-online{@apply bg-emerald-500;}
+  .teleleaflet-marker.is-emergency{@apply bg-red-600;}
+  .teleleaflet-marker.is-selected{@apply scale-125 ring-4 ring-red-100;}
+  .teleleaflet-marker__pulse{@apply absolute inset-0 rounded-full opacity-30;animation:teleleaflet-pulse 1.8s ease-out infinite;background:currentColor;}
+  .teleleaflet-marker__icon{@apply relative z-10 leading-none;}
+  .leaflet-tooltip{@apply rounded-xl border-0 px-3 py-2 text-xs font-semibold shadow-lg;}
+}
+
+@keyframes teleleaflet-pulse{
+  0%{transform:scale(.7);opacity:.35;}
+  70%{transform:scale(1.75);opacity:0;}
+  100%{transform:scale(1.75);opacity:0;}
+}
