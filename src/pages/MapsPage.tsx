@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Ambulance, Building2, Layers, LocateFixed, MessageSquare, Navigation, ShieldCheck } from 'lucide-react';
+import { Ambulance, Building2, Layers, LocateFixed, MessageSquare, Navigation, ShieldCheck, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MilitaryHealthCommandStack } from '@/components/command/CommandCenterComponents';
 import { mapLocations, type MapLocation } from '@/data/mapLocations';
-import { MobileMapsBottomSheet, useFilteredMapLocations } from '@/components/maps/MapsSidebar';
+import { MobileMapsBottomSheet, SidebarChatPreview, useFilteredMapLocations } from '@/components/maps/MapsSidebar';
 import { useSidebarMapStore } from '@/stores/sidebarMapStore';
 
 type LeafletApi = {
@@ -215,6 +215,28 @@ function MapView({ onOpenChat, onRequestAccess }: { onOpenChat: () => void; onRe
   );
 }
 
+function MapChatPanel({ onRequestAccess }: { onRequestAccess: () => void }) {
+  const sidebarMode = useSidebarMapStore((s) => s.sidebarMode);
+  const setSidebarMode = useSidebarMapStore((s) => s.setSidebarMode);
+
+  if (sidebarMode !== 'chat-preview') return null;
+
+  return (
+    <aside className="fixed inset-x-3 bottom-20 z-50 rounded-3xl border bg-white p-3 shadow-2xl lg:inset-x-auto lg:bottom-6 lg:right-6 lg:w-[400px]">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-skyforce">Panel kanan / bottom sheet</p>
+          <h2 className="font-bold">Clinical Chat</h2>
+        </div>
+        <Button aria-label="Tutup chat" size="icon" variant="ghost" onClick={() => setSidebarMode('navigation')}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      <SidebarChatPreview onRequestAccess={onRequestAccess} />
+    </aside>
+  );
+}
+
 export function MapsPage() {
   const [toast, setToast] = useState<string>();
   const selectedMarkerId = useSidebarMapStore((s) => s.selectedMarkerId);
@@ -237,6 +259,7 @@ export function MapsPage() {
       <MapView onOpenChat={() => showNotice('ChatPanel simulasi dibuka dari sidebar.')} onRequestAccess={() => showNotice('AccessRequestModal simulasi dibuka dari sidebar.')} />
       <MilitaryHealthCommandStack selectedLocation={selected} />
       <MobileMapsBottomSheet onOpenChat={() => showNotice('Chat mobile dibuka sebagai bottom sheet.')} onRequestAccess={() => showNotice('Request akses mobile dibuka.')} />
+      <MapChatPanel onRequestAccess={() => showNotice('Request akses chat dibuka.')} />
       {toast && <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-night px-4 py-2 text-sm font-semibold text-white shadow-lg">{toast}</div>}
     </div>
   );
