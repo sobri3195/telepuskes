@@ -2,8 +2,8 @@ import { facilities, units, users } from '@/data/mockData';
 import type { TriagePriority } from '@/types';
 
 export type AccessBadge = 'Terbuka' | 'Butuh Akses' | 'Akses Diberikan' | 'Khusus Admin' | 'Darurat';
-export type LocationStatus = 'Aktif' | 'Offline' | 'Darurat' | 'Dokter Online';
-export type MapLocationType = 'Lanud' | 'RSAU' | 'RSPAU' | 'Klinik' | 'Dokter' | 'Admin' | 'Satuan';
+export type LocationStatus = 'Aktif' | 'Offline' | 'Darurat' | 'Dokter Online' | 'Layanan terbatas' | 'IGD tersedia' | 'Spesialis tersedia' | 'Rujukan tersedia' | 'Peralatan terbatas' | 'Butuh koordinasi' | 'Kasus darurat aktif';
+export type MapLocationType = 'Lanud' | 'RSAU' | 'RSPAU' | 'Klinik' | 'Dokter' | 'Admin' | 'Satuan' | 'Kasus Aktif' | 'Kasus Darurat' | 'Rujukan Aktif' | 'Daerah Operasi';
 
 export type MapLocation = {
   id: string;
@@ -152,4 +152,20 @@ const peopleLocations: MapLocation[] = users.map((user, index) => {
   };
 });
 
-export const mapLocations = [...baseLocations, ...peopleLocations];
+
+
+const operationalLocations: MapLocation[] = [
+  {
+    id: 'ops-case-red-1', name: 'Kasus Merah Daerah Operasi Papua', type: 'Kasus Darurat', city: 'Timika', province: 'Papua Tengah', kotama: 'Koopsud III', address: 'Titik evakuasi medis simulasi', operationalHours: '24 jam operasi', services: ['Golden Hour', 'Chat darurat', 'Referral cepat', 'Ambulans udara simulasi'], staffOnline: 3, queueEstimate: 'Respons <5 menit', status: 'Kasus darurat aktif', accessBadge: 'Darurat', priority: 'merah', hasEmergency: true, hasOnlineDoctor: true, adminAvailable: true, latitude: -4.55, longitude: 136.89, relatedPerson: 'Tim medis operasi', searchText: 'kasus merah daerah operasi papua golden hour referral cepat emergency'.toLowerCase(),
+  },
+  {
+    id: 'ops-referral-1', name: 'Rujukan Aktif Lanud Atang Sendjaja → RSPAU', type: 'Rujukan Aktif', city: 'Bogor', province: 'Jawa Barat', kotama: 'Koopsud I', address: 'Jalur rujukan simulasi via darat', operationalHours: 'Dalam perjalanan', services: ['Rujukan aktif', 'Koordinasi admin', 'Surat rujukan', 'RME ringkas'], staffOnline: 2, queueEstimate: 'ETA 42 menit', status: 'Rujukan tersedia', accessBadge: 'Akses Diberikan', priority: 'kuning', hasEmergency: false, hasOnlineDoctor: true, adminAvailable: true, latitude: -6.6, longitude: 106.8, relatedPerson: 'Tim rujukan', searchText: 'rujukan aktif lanud rspau koordinasi admin rme ringkas'.toLowerCase(),
+  },
+  {
+    id: 'ops-limited-1', name: 'Faskes Terbatas Lanud Natuna', type: 'Klinik', city: 'Natuna', province: 'Kepulauan Riau', kotama: 'Koopsud I', address: 'Lanud terpencil simulasi', operationalHours: '08.00-16.00, on call', services: ['Dokter umum', 'Farmasi terbatas', 'Telekonsultasi spesialis', 'Field Mode'], staffOnline: 1, queueEstimate: 'Antrean 1 pasien', status: 'Peralatan terbatas', accessBadge: 'Butuh Akses', priority: 'kuning', hasEmergency: false, hasOnlineDoctor: true, adminAvailable: true, latitude: 3.95, longitude: 108.38, relatedPerson: 'Admin kesehatan satuan', searchText: 'faskes terbatas natuna 3t telekonsultasi spesialis field mode'.toLowerCase(),
+  },
+];
+
+export const healthCommandMarkers = operationalLocations;
+
+export const mapLocations = [...baseLocations, ...peopleLocations, ...operationalLocations];

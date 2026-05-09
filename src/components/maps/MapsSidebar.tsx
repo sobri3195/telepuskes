@@ -21,6 +21,7 @@ import {
   WifiOff,
   X,
 } from 'lucide-react';
+import { FacilityCapabilityPanel, FieldModeToggle, SecurityBadge } from '@/components/command/CommandCenterComponents';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,13 @@ const filterOptions = [
   'Prioritas merah',
   'Prioritas kuning',
   'Prioritas hijau',
+  'Faskes dengan dokter spesialis',
+  'Faskes dengan ambulans',
+  'Faskes dengan farmasi',
+  'Faskes dengan radiologi',
+  'Faskes dengan laboratorium',
+  'Faskes bisa menerima rujukan',
+  'Faskes cocok untuk kasus pasien',
 ];
 
 const accessClass: Record<AccessBadge, string> = {
@@ -78,7 +86,14 @@ function applyFilter(locations: MapLocation[]) {
       (selectedType === 'Kasus darurat' && location.hasEmergency) ||
       (selectedType === 'Prioritas merah' && location.priority === 'merah') ||
       (selectedType === 'Prioritas kuning' && location.priority === 'kuning') ||
-      (selectedType === 'Prioritas hijau' && location.priority === 'hijau');
+      (selectedType === 'Prioritas hijau' && location.priority === 'hijau') ||
+      (selectedType === 'Faskes dengan dokter spesialis' && location.hasOnlineDoctor) ||
+      (selectedType === 'Faskes dengan ambulans' && location.services.some((service) => service.toLowerCase().includes('ambulans'))) ||
+      (selectedType === 'Faskes dengan farmasi' && location.services.some((service) => service.toLowerCase().includes('farmasi'))) ||
+      (selectedType === 'Faskes dengan radiologi' && location.services.some((service) => service.toLowerCase().includes('radiologi'))) ||
+      (selectedType === 'Faskes dengan laboratorium' && location.services.some((service) => service.toLowerCase().includes('lab'))) ||
+      (selectedType === 'Faskes bisa menerima rujukan' && location.services.some((service) => service.toLowerCase().includes('rujukan'))) ||
+      (selectedType === 'Faskes cocok untuk kasus pasien' && location.priority !== 'hijau');
     return matchesQuery && matchesKotama && matchesAccess && matchesService && matchesOnline && matchesEmergency && matchesType;
   });
 }
@@ -163,7 +178,7 @@ function SidebarBrand({ role, online }: { role: Role; online: boolean }) {
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15"><RadioTower className="h-6 w-6" /></div>
           <div>
             <h2 className="text-lg font-bold">Telehealth AU Maps</h2>
-            <p className="text-xs text-sky-100">Command center peta, akses, chat</p>
+            <p className="text-xs text-sky-100">Military health command map, RME, referral</p>
           </div>
         </div>
         <SidebarCollapseButton />
@@ -226,6 +241,7 @@ export function SidebarFilter() {
       </div>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={state.showOnlyOnlineStaff} onChange={(event) => state.setShowOnlyOnlineStaff(event.target.checked)} /> Dokter/petugas online</label>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={state.showOnlyEmergencyFacilities} onChange={(event) => state.setShowOnlyEmergencyFacilities(event.target.checked)} /> Faskes IGD/darurat</label>
+      <FieldModeToggle />
     </section>
   );
 }
@@ -286,9 +302,10 @@ export function SidebarSelectedLocationPanel({ location, onOpenChat, onRequestAc
         <p><b>Jam:</b> {location.operationalHours}</p>
         <p><b>Layanan:</b> {location.services.join(' · ')}</p>
         <div className="grid grid-cols-2 gap-2"><Badge>{location.staffOnline} petugas online</Badge><Badge variant="secondary">Antrean {location.queueEstimate}</Badge></div>
-        <Badge className={accessClass[location.accessBadge]}>Status akses: {location.accessBadge}</Badge>
+        <div className="flex flex-wrap gap-2"><Badge className={accessClass[location.accessBadge]}>Status akses: {location.accessBadge}</Badge><SecurityBadge classification={location.hasEmergency ? 'EMERGENCY_ACCESS' : 'MEDICAL_STAFF_ONLY'} /></div>
+        <FacilityCapabilityPanel location={location} />
         <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" variant="outline">Buka Detail</Button><Button size="sm">Mulai Konsultasi</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('chat-preview'); onOpenChat?.(); }}>Chat Admin</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('chat-preview'); onOpenChat?.(); }}>Chat Dokter</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('access-request'); onRequestAccess?.(); }}>Minta Akses</Button><Button size="sm" variant="outline"><Route className="h-4 w-4" /> Rute</Button><Button size="sm" variant="outline" className="col-span-2"><Star className="h-4 w-4" /> Tandai Favorit</Button>
+          <Button size="sm">Mulai Konsultasi</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('chat-preview'); onOpenChat?.(); }}>Chat Admin</Button><Button size="sm" variant="outline">Rujuk</Button><Button size="sm" variant="outline">Teleconference</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('access-request'); onRequestAccess?.(); }}>Minta Akses</Button><Button size="sm" variant="outline"><Route className="h-4 w-4" /> Rute</Button><Button size="sm" variant="outline" className="col-span-2"><Star className="h-4 w-4" /> Tandai Favorit</Button>
         </div>
       </div>
     </section>
@@ -313,8 +330,8 @@ export function SidebarChatPreview({ onRequestAccess }: { onRequestAccess?: () =
   const hasAccess = location.accessBadge !== 'Butuh Akses' && location.accessBadge !== 'Khusus Admin';
   return (
     <section className="mb-4 rounded-3xl border bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between"><div><h3 className="font-semibold">{location.relatedPerson ?? 'Admin Faskes'}</h3><p className="text-xs text-slate-500">{location.name} · {location.status}</p></div><Badge>{hasAccess ? 'Online' : 'Terkunci'}</Badge></div>
-      {hasAccess ? <div className="mt-3 space-y-2 text-sm"><p className="rounded-2xl bg-slate-100 p-2">Halo, ada yang bisa kami bantu?</p><p className="rounded-2xl bg-sky-100 p-2">Saya ingin konsultasi layanan.</p><p className="rounded-2xl bg-slate-100 p-2">Silakan pilih jadwal terdekat.</p><Input placeholder="Tulis pesan singkat..." /><Button size="sm" className="w-full">Buka chat penuh</Button></div> : <div className="mt-3 space-y-2"><p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-800">Anda belum memiliki akses untuk menghubungi petugas ini.</p><div className="grid gap-2"><Button size="sm" onClick={onRequestAccess}>Minta Akses</Button><Button size="sm" variant="outline">Buat Konsultasi</Button><Button size="sm" variant="outline">Pilih Faskes Lain</Button></div></div>}
+      <div className="flex items-center justify-between"><div><h3 className="font-semibold">Clinical Chat · {location.relatedPerson ?? 'Admin Faskes'}</h3><p className="text-xs text-slate-500">{location.name} · {location.status} · konteks pasien/faskes/triase</p></div><Badge>{hasAccess ? 'Online' : 'Terkunci'}</Badge></div>
+      {hasAccess ? <div className="mt-3 space-y-2 text-sm"><p className="rounded-2xl bg-slate-100 p-2">Halo, ada yang bisa kami bantu?</p><p className="rounded-2xl bg-sky-100 p-2">Saya ingin konsultasi layanan.</p><p className="rounded-2xl bg-slate-100 p-2">Silakan pilih jadwal terdekat.</p><div className="rounded-2xl bg-emerald-50 p-2 text-xs text-emerald-800">Anda terhubung dengan tenaga kesehatan terverifikasi. Percakapan disimpan sebagai riwayat konsultasi simulasi.</div><Input placeholder="Tulis pesan klinis..." /><Button size="sm" className="w-full">Buka clinical chat penuh</Button></div> : <div className="mt-3 space-y-2"><p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-800">Anda belum memiliki akses untuk menghubungi petugas ini.</p><div className="grid gap-2"><Button size="sm" onClick={onRequestAccess}>Minta Akses</Button><Button size="sm" variant="outline">Buat Konsultasi</Button><Button size="sm" variant="outline">Pilih Faskes Lain</Button></div></div>}
     </section>
   );
 }

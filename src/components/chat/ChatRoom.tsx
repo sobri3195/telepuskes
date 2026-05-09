@@ -1,5 +1,6 @@
 import { Send } from 'lucide-react';
 import { useState } from 'react';
+import { ClinicalContextHeader, ConsentModal, SoapNoteDrawer, SpecialistTeleconferenceModal } from '@/components/command/CommandCenterComponents';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { autoReply } from '@/lib/triage';
@@ -43,9 +44,11 @@ export function ChatRoom({ chat }: { chat: Chat }) {
 
   return (
     <div className="flex h-[72vh] flex-col rounded-xl border bg-white">
-      <div className="border-b p-4">
-        <b>{chat.title}</b>
-        <p className="text-xs text-muted-foreground">{chat.participants.join(' · ')}</p>
+      <div className="space-y-3 border-b p-4">
+        <div><b>{chat.title}</b>
+        <p className="text-xs text-muted-foreground">{chat.participants.join(' · ')} · Clinical Chat aman</p></div>
+        <ClinicalContextHeader priority={chat.priority} />
+        <div className="flex flex-wrap gap-2"><ConsentModal /><SoapNoteDrawer /><Button size="sm" variant="outline">Buat Resep Simulasi</Button><Button size="sm" variant="outline">Buat Rujukan</Button><Button size="sm" variant="outline">Jadwalkan Follow-up</Button><SpecialistTeleconferenceModal /><Button size="sm" variant="destructive">Tandai Darurat</Button><Button size="sm">Tutup Konsultasi</Button></div>
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {chat.messages.map((message) => <MessageBubble key={message.id} m={message} />)}
@@ -60,7 +63,7 @@ export function ChatRoom({ chat }: { chat: Chat }) {
           onKeyDown={(event) => {
             if (event.key === 'Enter') send();
           }}
-          placeholder="Tulis pesan..."
+          placeholder="Tulis pesan klinis, template pertanyaan dokter, atau edukasi pasien..."
         />
         <Button onClick={() => send()}>
           <Send className="h-4 w-4" />
