@@ -1,18 +1,16 @@
 import { useMemo } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   Activity,
   Building2,
   ChevronLeft,
   ChevronRight,
-  HeartPulse,
   Map,
   MessageSquare,
   RadioTower,
   Route,
   Search,
   Settings,
-  ShieldCheck,
   Star,
   Stethoscope,
   User,
@@ -110,35 +108,15 @@ export function useFilteredMapLocations() {
   ]);
 }
 
-export function MapsSidebar({ onOpenChat, onRequestAccess }: { onOpenChat?: () => void; onRequestAccess?: () => void }) {
-  const user = useAuthStore((s) => s.user);
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isCollapsed = useSidebarMapStore((s) => s.isCollapsed);
-  const selectedMarkerId = useSidebarMapStore((s) => s.selectedMarkerId);
-  const sidebarMode = useSidebarMapStore((s) => s.sidebarMode);
-  const setSidebarMode = useSidebarMapStore((s) => s.setSidebarMode);
-  const openChat = () => {
-    setSidebarMode('chat-preview');
-    if (onOpenChat) {
-      onOpenChat();
-      return;
-    }
-    if (pathname !== '/app/maps') navigate('/app/messages');
-  };
-  const requestAccess = () => {
-    onRequestAccess?.();
-    setSidebarMode('access-request');
-  };
-  const setShowOnlyEmergencyFacilities = useSidebarMapStore((s) => s.setShowOnlyEmergencyFacilities);
-  const locations = useFilteredMapLocations();
-  const selectedLocation = mapLocations.find((location) => location.id === selectedMarkerId) ?? locations[0];
+export function MapsSidebar() {
+  const user = useAuthStore((state) => state.user);
+  const isCollapsed = useSidebarMapStore((state) => state.isCollapsed);
 
   if (isCollapsed) {
     return (
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[72px] flex-col border-r border-sky-100 bg-white text-slate-700 shadow-sm lg:flex">
         <div className="flex flex-col items-center gap-4 p-3">
-          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-skyforce text-white"><Map className="h-5 w-5" /></div>
+          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-skyforce text-white"><RadioTower className="h-5 w-5" /></div>
           <SidebarCollapseButton />
           <CollapsedNav />
         </div>
@@ -147,28 +125,9 @@ export function MapsSidebar({ onOpenChat, onRequestAccess }: { onOpenChat?: () =
   }
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[360px] flex-col border-r border-sky-100 bg-sky-50/80 text-slate-900 shadow-sm lg:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[280px] flex-col border-r border-sky-100 bg-white text-slate-900 shadow-sm lg:flex">
       <div className="flex min-h-0 flex-1 flex-col">
         <SidebarBrand role={user?.role ?? 'Pasien'} online />
-        <div className="sticky top-0 z-10 space-y-3 border-y border-sky-100 bg-white/95 p-4 backdrop-blur">
-          <SidebarSearch locations={locations} />
-          <div className="grid grid-cols-3 gap-2">
-            <Button size="sm" variant={sidebarMode === 'filter' ? 'default' : 'outline'} onClick={() => setSidebarMode('filter')}>Filter</Button>
-            <Button size="sm" variant={sidebarMode === 'chat-preview' ? 'default' : 'outline'} onClick={openChat}>Chat</Button>
-            <Button size="sm" variant="destructive" onClick={() => { setShowOnlyEmergencyFacilities(true); setSidebarMode('emergency'); }}>
-              Darurat
-            </Button>
-          </div>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          {sidebarMode === 'filter' && <SidebarFilter />}
-          {sidebarMode === 'access-request' && <SidebarAccessRequestList />}
-          {(sidebarMode === 'location-detail' || sidebarMode === 'emergency') && selectedLocation && (
-            <SidebarSelectedLocationPanel location={selectedLocation} onOpenChat={openChat} onRequestAccess={requestAccess} />
-          )}
-          <SidebarAccessStatus />
-          <SidebarLocationList locations={locations} onOpenChat={openChat} onRequestAccess={requestAccess} />
-        </div>
         <SidebarNavigation />
       </div>
     </aside>
@@ -182,15 +141,15 @@ function SidebarBrand({ role, online }: { role: Role; online: boolean }) {
         <div className="flex items-center gap-3">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15"><RadioTower className="h-6 w-6" /></div>
           <div>
-            <h2 className="text-lg font-bold">Telehealth AU Maps</h2>
-            <p className="text-xs text-sky-100">Military health command map, RME, referral</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-sky-100">Logo aplikasi</p>
+            <h2 className="text-lg font-bold">Telehealth AU</h2>
           </div>
         </div>
         <SidebarCollapseButton />
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+      <div className="mt-4 grid gap-2 text-xs">
         <div className="rounded-xl bg-white/10 p-3"><p className="text-sky-100">Role aktif</p><b>{role}</b></div>
-        <div className="rounded-xl bg-white/10 p-3"><p className="text-sky-100">Koneksi</p><b className="inline-flex items-center gap-1">{online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />} {online ? 'Online' : 'Offline'}</b></div>
+        <div className="rounded-xl bg-white/10 p-3"><p className="text-sky-100">Status koneksi</p><b className="inline-flex items-center gap-1">{online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />} {online ? 'Online' : 'Offline'}</b></div>
       </div>
     </div>
   );
@@ -335,34 +294,28 @@ export function SidebarAccessRequestList() {
   return (
     <section className="mb-4 rounded-3xl border bg-white p-4 shadow-sm">
       <h3 className="font-semibold">Access Request</h3>
-      {!isAdmin && <p className="mt-2 text-sm text-slate-500">Permintaan akses Anda tampil langsung di sidebar.</p>}
+      {!isAdmin && <p className="mt-2 text-sm text-slate-500">Permintaan akses Anda tampil langsung di halaman Maps.</p>}
       {requests.map((request) => <div key={request.patient} className="mt-3 rounded-2xl bg-slate-50 p-3 text-sm"><b>{request.patient}</b><p className="text-xs text-slate-500">{request.facility} · {request.reason}</p><Badge className={request.status.includes('Emergency') ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>{request.status}</Badge>{isAdmin && <div className="mt-2 grid grid-cols-2 gap-2"><Button size="sm">Setujui</Button><Button size="sm" variant="outline">Tolak</Button><Button size="sm" variant="outline">Detail pasien</Button><Button size="sm" variant="outline">Buka chat</Button></div>}</div>)}
     </section>
   );
 }
 
 const navItems = [
-  { to: '/app/maps', label: 'Maps', icon: Map, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan', 'Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
-  { to: '/app/needs', label: 'Kebutuhan Pasien', icon: HeartPulse, roles: ['Pasien'] },
-  { to: '/app/consultations', label: 'Konsultasi', icon: Stethoscope, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan'] },
-  { to: '/app/messages', label: 'Pesan', icon: MessageSquare, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan', 'Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
-  { to: '/app/units', label: 'Jajaran & Faskes', icon: Building2, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan', 'Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
-  { to: '/app/profile', label: 'Profil', icon: User, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan', 'Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
-  { to: '/doctor/dashboard', label: 'Dashboard Dokter', icon: Activity, roles: ['Dokter', 'Perawat/Tenaga Kesehatan'] },
-  { to: '/admin/dashboard', label: 'Dashboard Admin', icon: ShieldCheck, roles: ['Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
-  { to: '/app/profile', label: 'Pengaturan', icon: Settings, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan', 'Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
-] satisfies { to: string; label: string; icon: typeof Map; roles: Role[] }[];
+  { to: '/app/maps', label: 'Maps', icon: Map },
+  { to: '/app/consultations', label: 'Konsultasi', icon: Stethoscope },
+  { to: '/app/messages', label: 'Pesan', icon: MessageSquare },
+  { to: '/app/units', label: 'Jajaran & Faskes', icon: Building2 },
+  { to: '/app/profile', label: 'Profil', icon: User },
+  { to: '/doctor/dashboard', label: 'Dashboard Dokter', icon: Activity },
+  { to: '/app/profile', label: 'Pengaturan', icon: Settings },
+] satisfies { to: string; label: string; icon: typeof Map }[];
 
 export function SidebarNavigation() {
-  const user = useAuthStore((s) => s.user);
-  const role = user?.role ?? 'Pasien';
-  return <nav className="border-t bg-white p-3"><div className="grid gap-1">{navItems.filter((item) => item.roles.includes(role)).map(({ to, label, icon: Icon }) => <NavLink key={label} to={to} className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold ${isActive ? 'bg-skyforce text-white' : 'text-slate-600 hover:bg-sky-50'}`}><Icon className="h-4 w-4" />{label}</NavLink>)}</div></nav>;
+  return <nav className="flex-1 overflow-y-auto p-3"><div className="grid gap-1">{navItems.map(({ to, label, icon: Icon }) => <NavLink key={label} to={to} className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold ${isActive ? 'bg-skyforce text-white' : 'text-slate-600 hover:bg-sky-50'}`}><Icon className="h-4 w-4" />{label}</NavLink>)}</div></nav>;
 }
 
 function CollapsedNav() {
-  const user = useAuthStore((s) => s.user);
-  const role = user?.role ?? 'Pasien';
-  return <nav className="flex flex-col gap-2">{navItems.filter((item) => item.roles.includes(role)).slice(0, 7).map(({ to, label, icon: Icon }) => <NavLink key={label} to={to} title={label} className={({ isActive }) => `relative grid h-11 w-11 place-items-center rounded-2xl ${isActive ? 'bg-skyforce text-white' : 'text-slate-500 hover:bg-sky-50'}`}><Icon className="h-5 w-5" />{['Pesan', 'Dashboard Admin'].includes(label) && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />}</NavLink>)}</nav>;
+  return <nav className="flex flex-col gap-2">{navItems.map(({ to, label, icon: Icon }) => <NavLink key={label} to={to} title={label} className={({ isActive }) => `grid h-11 w-11 place-items-center rounded-2xl ${isActive ? 'bg-skyforce text-white' : 'text-slate-500 hover:bg-sky-50'}`}><Icon className="h-5 w-5" /></NavLink>)}</nav>;
 }
 
 export function SidebarCollapseButton() {

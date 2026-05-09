@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MilitaryHealthCommandStack } from '@/components/command/CommandCenterComponents';
 import { mapLocations, type MapLocation } from '@/data/mapLocations';
-import { MobileMapsBottomSheet, SidebarChatPreview, useFilteredMapLocations } from '@/components/maps/MapsSidebar';
+import { MobileMapsBottomSheet, SidebarAccessRequestList, SidebarAccessStatus, SidebarChatPreview, SidebarFilter, SidebarLocationList, SidebarSelectedLocationPanel, SidebarSearch, useFilteredMapLocations } from '@/components/maps/MapsSidebar';
 import { useSidebarMapStore } from '@/stores/sidebarMapStore';
 
 type LeafletApi = {
@@ -215,6 +215,35 @@ function MapView({ onOpenChat, onRequestAccess }: { onOpenChat: () => void; onRe
   );
 }
 
+
+function MapsControlPanel({ onOpenChat, onRequestAccess }: { onOpenChat: () => void; onRequestAccess: () => void }) {
+  const locations = useFilteredMapLocations();
+  const sidebarMode = useSidebarMapStore((state) => state.sidebarMode);
+  const selectedMarkerId = useSidebarMapStore((state) => state.selectedMarkerId);
+  const selected = mapLocations.find((location) => location.id === selectedMarkerId);
+
+  return (
+    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)]">
+      <div className="space-y-4 rounded-3xl border bg-white p-4 shadow-sm">
+        <div>
+          <p className="text-sm font-semibold text-skyforce">Kontrol Maps</p>
+          <h2 className="text-xl font-bold">Search, filter, dan daftar faskes</h2>
+          <p className="text-sm text-slate-500">Semua fitur lokasi berada di konten utama halaman Maps, terpisah dari sidebar navigasi global.</p>
+        </div>
+        <SidebarSearch locations={locations} />
+        <SidebarFilter />
+        <SidebarAccessStatus />
+        <SidebarLocationList locations={locations} onOpenChat={onOpenChat} onRequestAccess={onRequestAccess} />
+      </div>
+
+      <div className="space-y-4">
+        {selected && <SidebarSelectedLocationPanel location={selected} onOpenChat={onOpenChat} onRequestAccess={onRequestAccess} />}
+        {sidebarMode === 'access-request' && <SidebarAccessRequestList />}
+      </div>
+    </section>
+  );
+}
+
 function MapChatPanel({ onRequestAccess }: { onRequestAccess: () => void }) {
   const sidebarMode = useSidebarMapStore((s) => s.sidebarMode);
   const setSidebarMode = useSidebarMapStore((s) => s.setSidebarMode);
@@ -256,7 +285,8 @@ export function MapsPage() {
         </div>
         {selected && <Badge className="w-fit">Marker aktif: {selected.name}</Badge>}
       </div>
-      <MapView onOpenChat={() => showNotice('ChatPanel simulasi dibuka dari sidebar.')} onRequestAccess={() => showNotice('AccessRequestModal simulasi dibuka dari sidebar.')} />
+      <MapView onOpenChat={() => showNotice('ChatPanel simulasi dibuka dari halaman Maps.')} onRequestAccess={() => showNotice('AccessRequestModal simulasi dibuka dari halaman Maps.')} />
+      <MapsControlPanel onOpenChat={() => showNotice('ChatPanel simulasi dibuka dari halaman Maps.')} onRequestAccess={() => showNotice('AccessRequestModal simulasi dibuka dari halaman Maps.')} />
       <MilitaryHealthCommandStack selectedLocation={selected} />
       <MobileMapsBottomSheet onOpenChat={() => showNotice('Chat mobile dibuka sebagai bottom sheet.')} onRequestAccess={() => showNotice('Request akses mobile dibuka.')} />
       <MapChatPanel onRequestAccess={() => showNotice('Request akses chat dibuka.')} />
