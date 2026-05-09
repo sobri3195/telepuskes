@@ -5,6 +5,7 @@ import { ChatPage } from '@/pages/ChatPage';
 import { ConsultationsPage } from '@/pages/ConsultationsPage';
 import { DoctorDashboardPage } from '@/pages/DoctorDashboardPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { MapsPage } from '@/pages/MapsPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { PatientDashboardPage } from '@/pages/PatientDashboardPage';
 import { PatientNeedsPage } from '@/pages/PatientNeedsPage';
@@ -33,6 +34,7 @@ export default function App() {
       <Route element={<Protected />}>
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/app/dashboard" element={<PatientDashboardPage />} />
+        <Route path="/app/maps" element={<MapsPage />} />
         <Route path="/app/needs" element={<PatientNeedsPage />} />
         <Route path="/app/consultations" element={<ConsultationsPage />} />
         <Route path="/app/consultations/:id" element={<ConsultationsPage />} />

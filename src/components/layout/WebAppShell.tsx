@@ -1,13 +1,16 @@
 import { Outlet } from 'react-router-dom';
 import { MobileBottomNavigation } from './MobileBottomNavigation';
-import { SidebarNavigation } from './SidebarNavigation';
+import { MapsSidebar } from '@/components/maps/MapsSidebar';
+import { useSidebarMapStore } from '@/stores/sidebarMapStore';
 import { TopHeader } from './TopHeader';
 
 export function WebAppShell() {
+  const isCollapsed = useSidebarMapStore((s) => s.isCollapsed);
+
   return (
     <div className="min-h-screen bg-slate-50">
-      <SidebarNavigation />
-      <div className="lg:pl-72">
+      <MapsSidebar />
+      <div className={isCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[360px]'}>
         <TopHeader />
         <main className="mx-auto max-w-7xl px-4 py-6 pb-24 lg:px-8">
           <Outlet />

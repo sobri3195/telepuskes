@@ -1,0 +1,392 @@
+import { useMemo } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import {
+  Activity,
+  Ambulance,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  HeartPulse,
+  Map,
+  MessageSquare,
+  RadioTower,
+  Route,
+  Search,
+  Settings,
+  ShieldCheck,
+  Star,
+  Stethoscope,
+  User,
+  Wifi,
+  WifiOff,
+  X,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { mapLocations, type AccessBadge, type MapLocation } from '@/data/mapLocations';
+import { organizationRoots } from '@/data/mockData';
+import { useAuthStore } from '@/stores/authStore';
+import { useSidebarMapStore } from '@/stores/sidebarMapStore';
+import type { Role } from '@/types';
+
+const filterOptions = [
+  'Semua lokasi',
+  'Lanud/Satuan',
+  'Faskes aktif',
+  'Faskes dengan IGD/darurat',
+  'Dokter online',
+  'Admin faskes tersedia',
+  'Butuh akses',
+  'Akses tersedia',
+  'Kasus darurat',
+  'Prioritas merah',
+  'Prioritas kuning',
+  'Prioritas hijau',
+];
+
+const accessClass: Record<AccessBadge, string> = {
+  Terbuka: 'bg-sky-100 text-sky-700',
+  'Butuh Akses': 'bg-amber-100 text-amber-700',
+  'Akses Diberikan': 'bg-emerald-100 text-emerald-700',
+  'Khusus Admin': 'bg-violet-100 text-violet-700',
+  Darurat: 'bg-red-100 text-red-700',
+};
+
+function applyFilter(locations: MapLocation[]) {
+  const state = useSidebarMapStore.getState();
+  const query = state.searchQuery.trim().toLowerCase();
+  return locations.filter((location) => {
+    const matchesQuery = !query || location.searchText.includes(query);
+    const matchesKotama = state.selectedKotama === 'Semua kotama' || location.kotama === state.selectedKotama;
+    const matchesAccess = state.selectedAccessStatus === 'Semua akses' || location.accessBadge === state.selectedAccessStatus;
+    const matchesService =
+      state.selectedService === 'Semua layanan' || location.services.some((service) => service === state.selectedService);
+    const matchesOnline = !state.showOnlyOnlineStaff || location.hasOnlineDoctor;
+    const matchesEmergency = !state.showOnlyEmergencyFacilities || location.hasEmergency;
+    const selectedType = state.selectedLocationType;
+    const matchesType =
+      selectedType === 'Semua lokasi' ||
+      (selectedType === 'Lanud/Satuan' && ['Lanud', 'Satuan'].includes(location.type)) ||
+      (selectedType === 'Faskes aktif' && ['RSAU', 'RSPAU', 'Klinik'].includes(location.type) && location.status !== 'Offline') ||
+      (selectedType === 'Faskes dengan IGD/darurat' && location.hasEmergency) ||
+      (selectedType === 'Dokter online' && location.hasOnlineDoctor) ||
+      (selectedType === 'Admin faskes tersedia' && location.adminAvailable) ||
+      (selectedType === 'Butuh akses' && location.accessBadge === 'Butuh Akses') ||
+      (selectedType === 'Akses tersedia' && ['Terbuka', 'Akses Diberikan'].includes(location.accessBadge)) ||
+      (selectedType === 'Kasus darurat' && location.hasEmergency) ||
+      (selectedType === 'Prioritas merah' && location.priority === 'merah') ||
+      (selectedType === 'Prioritas kuning' && location.priority === 'kuning') ||
+      (selectedType === 'Prioritas hijau' && location.priority === 'hijau');
+    return matchesQuery && matchesKotama && matchesAccess && matchesService && matchesOnline && matchesEmergency && matchesType;
+  });
+}
+
+export function useFilteredMapLocations() {
+  const state = useSidebarMapStore();
+  return useMemo(() => applyFilter(mapLocations), [
+    state.searchQuery,
+    state.selectedKotama,
+    state.selectedLocationType,
+    state.selectedAccessStatus,
+    state.selectedService,
+    state.showOnlyOnlineStaff,
+    state.showOnlyEmergencyFacilities,
+  ]);
+}
+
+export function MapsSidebar({ onOpenChat, onRequestAccess }: { onOpenChat?: () => void; onRequestAccess?: () => void }) {
+  const user = useAuthStore((s) => s.user);
+  const navigate = useNavigate();
+  const isCollapsed = useSidebarMapStore((s) => s.isCollapsed);
+  const selectedMarkerId = useSidebarMapStore((s) => s.selectedMarkerId);
+  const sidebarMode = useSidebarMapStore((s) => s.sidebarMode);
+  const setSidebarMode = useSidebarMapStore((s) => s.setSidebarMode);
+  const openChat = () => (onOpenChat ? onOpenChat() : navigate('/app/messages'));
+  const requestAccess = () => {
+    onRequestAccess?.();
+    setSidebarMode('access-request');
+  };
+  const setShowOnlyEmergencyFacilities = useSidebarMapStore((s) => s.setShowOnlyEmergencyFacilities);
+  const locations = useFilteredMapLocations();
+  const selectedLocation = mapLocations.find((location) => location.id === selectedMarkerId) ?? locations[0];
+
+  if (isCollapsed) {
+    return (
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[72px] flex-col border-r border-sky-100 bg-white text-slate-700 shadow-sm lg:flex">
+        <div className="flex flex-col items-center gap-4 p-3">
+          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-skyforce text-white"><Map className="h-5 w-5" /></div>
+          <SidebarCollapseButton />
+          <CollapsedNav />
+        </div>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[360px] flex-col border-r border-sky-100 bg-sky-50/80 text-slate-900 shadow-sm lg:flex">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <SidebarBrand role={user?.role ?? 'Pasien'} online />
+        <div className="sticky top-0 z-10 space-y-3 border-y border-sky-100 bg-white/95 p-4 backdrop-blur">
+          <SidebarSearch locations={locations} />
+          <div className="grid grid-cols-3 gap-2">
+            <Button size="sm" variant={sidebarMode === 'filter' ? 'default' : 'outline'} onClick={() => setSidebarMode('filter')}>Filter</Button>
+            <Button size="sm" variant={sidebarMode === 'chat-preview' ? 'default' : 'outline'} onClick={() => setSidebarMode('chat-preview')}>Chat</Button>
+            <Button size="sm" variant="destructive" onClick={() => { setShowOnlyEmergencyFacilities(true); setSidebarMode('emergency'); }}>
+              Darurat
+            </Button>
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <SidebarMiniMap locations={locations.slice(0, 8)} selectedLocation={selectedLocation} />
+          {sidebarMode === 'filter' && <SidebarFilter />}
+          {sidebarMode === 'chat-preview' && <SidebarChatPreview onRequestAccess={onRequestAccess} />}
+          {sidebarMode === 'access-request' && <SidebarAccessRequestList />}
+          {(sidebarMode === 'location-detail' || sidebarMode === 'emergency') && selectedLocation && (
+            <SidebarSelectedLocationPanel location={selectedLocation} onOpenChat={openChat} onRequestAccess={requestAccess} />
+          )}
+          <SidebarAccessStatus />
+          <SidebarLocationList locations={locations} onOpenChat={openChat} onRequestAccess={requestAccess} />
+        </div>
+        <SidebarNavigation />
+      </div>
+    </aside>
+  );
+}
+
+function SidebarBrand({ role, online }: { role: Role; online: boolean }) {
+  return (
+    <div className="bg-gradient-to-br from-night to-skyforce p-5 text-white">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15"><RadioTower className="h-6 w-6" /></div>
+          <div>
+            <h2 className="text-lg font-bold">Telehealth AU Maps</h2>
+            <p className="text-xs text-sky-100">Command center peta, akses, chat</p>
+          </div>
+        </div>
+        <SidebarCollapseButton />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-xl bg-white/10 p-3"><p className="text-sky-100">Role aktif</p><b>{role}</b></div>
+        <div className="rounded-xl bg-white/10 p-3"><p className="text-sky-100">Koneksi</p><b className="inline-flex items-center gap-1">{online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />} {online ? 'Online' : 'Offline'}</b></div>
+      </div>
+    </div>
+  );
+}
+
+export function SidebarSearch({ locations }: { locations: MapLocation[] }) {
+  const query = useSidebarMapStore((s) => s.searchQuery);
+  const setSearchQuery = useSidebarMapStore((s) => s.setSearchQuery);
+  const setSelectedMarkerId = useSidebarMapStore((s) => s.setSelectedMarkerId);
+  const results = query ? locations.slice(0, 5) : [];
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+        <Input className="pl-9" placeholder="Cari Lanud, RSAU/RSPAU, dokter, kota, kotama..." value={query} onChange={(event) => setSearchQuery(event.target.value)} />
+      </div>
+      {results.length > 0 && (
+        <div className="rounded-2xl border bg-white p-2 shadow-sm">
+          {results.map((location) => (
+            <button key={location.id} className="flex w-full items-start gap-2 rounded-xl p-2 text-left hover:bg-sky-50" onClick={() => setSelectedMarkerId(location.id)}>
+              <Map className="mt-0.5 h-4 w-4 text-skyforce" />
+              <span><b className="block text-sm">{location.name}</b><span className="text-xs text-slate-500">{location.type} · {location.city} · {location.kotama}</span></span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function SidebarFilter() {
+  const state = useSidebarMapStore();
+  const allServices = Array.from(new Set(mapLocations.flatMap((location) => location.services))).slice(0, 12);
+  return (
+    <section className="mb-4 space-y-3 rounded-3xl border bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between"><h3 className="font-semibold">Filter Maps</h3><Button size="sm" variant="ghost" onClick={state.resetFilters}>Reset</Button></div>
+      <div className="flex flex-wrap gap-2">
+        {filterOptions.map((option) => (
+          <button key={option} onClick={() => state.setSelectedLocationType(option)} className={`rounded-full px-3 py-1 text-xs font-semibold ${state.selectedLocationType === option ? 'bg-skyforce text-white' : 'bg-slate-100 text-slate-600'}`}>{option}</button>
+        ))}
+      </div>
+      <Select value={state.selectedKotama} onChange={(event) => state.setSelectedKotama(event.target.value)}>
+        <option>Semua kotama</option>
+        {organizationRoots.map((root) => <option key={root}>{root}</option>)}
+      </Select>
+      <div className="grid grid-cols-2 gap-2">
+        <Select value={state.selectedAccessStatus} onChange={(event) => state.setSelectedAccessStatus(event.target.value)}>
+          <option>Semua akses</option><option>Terbuka</option><option>Butuh Akses</option><option>Akses Diberikan</option><option>Khusus Admin</option><option>Darurat</option>
+        </Select>
+        <Select value={state.selectedService} onChange={(event) => state.setSelectedService(event.target.value)}>
+          <option>Semua layanan</option>{allServices.map((service) => <option key={service}>{service}</option>)}
+        </Select>
+      </div>
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={state.showOnlyOnlineStaff} onChange={(event) => state.setShowOnlyOnlineStaff(event.target.checked)} /> Dokter/petugas online</label>
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={state.showOnlyEmergencyFacilities} onChange={(event) => state.setShowOnlyEmergencyFacilities(event.target.checked)} /> Faskes IGD/darurat</label>
+    </section>
+  );
+}
+
+export function SidebarMiniMap({ locations, selectedLocation }: { locations: MapLocation[]; selectedLocation?: MapLocation }) {
+  const setSelectedMarkerId = useSidebarMapStore((s) => s.setSelectedMarkerId);
+  return (
+    <button className="mb-4 hidden w-full overflow-hidden rounded-3xl border bg-gradient-to-br from-sky-100 via-white to-emerald-50 p-4 text-left shadow-sm md:block" onClick={() => selectedLocation && setSelectedMarkerId(selectedLocation.id)}>
+      <div className="mb-2 flex items-center justify-between"><b>Mini Map Preview</b><Badge>{selectedLocation?.city ?? 'Indonesia'}</Badge></div>
+      <div className="relative h-32 rounded-2xl bg-[radial-gradient(circle_at_30%_45%,#38bdf8_0_4px,transparent_5px),radial-gradient(circle_at_55%_55%,#22c55e_0_4px,transparent_5px),radial-gradient(circle_at_72%_40%,#ef4444_0_4px,transparent_5px)] bg-sky-50">
+        {locations.map((location, index) => <span key={location.id} className={`absolute h-3 w-3 rounded-full border-2 border-white ${location.id === selectedLocation?.id ? 'bg-red-500 ring-4 ring-red-100' : 'bg-skyforce'}`} style={{ left: `${12 + (index * 13) % 74}%`, top: `${20 + (index * 19) % 58}%` }} />)}
+      </div>
+      <p className="mt-2 text-xs text-slate-500">Klik preview untuk fokus ke peta utama.</p>
+    </button>
+  );
+}
+
+export function SidebarLocationList({ locations, onOpenChat, onRequestAccess }: { locations: MapLocation[]; onOpenChat?: () => void; onRequestAccess?: () => void }) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between"><h3 className="font-semibold">Mini List Lokasi</h3><Badge>{locations.length} hasil</Badge></div>
+      {locations.slice(0, 12).map((location) => <SidebarLocationItem key={location.id} location={location} onOpenChat={onOpenChat} onRequestAccess={onRequestAccess} />)}
+    </section>
+  );
+}
+
+export function SidebarLocationItem({ location, onOpenChat, onRequestAccess }: { location: MapLocation; onOpenChat?: () => void; onRequestAccess?: () => void }) {
+  const selectedMarkerId = useSidebarMapStore((s) => s.selectedMarkerId);
+  const setSelectedMarkerId = useSidebarMapStore((s) => s.setSelectedMarkerId);
+  const setSidebarMode = useSidebarMapStore((s) => s.setSidebarMode);
+  const isSelected = selectedMarkerId === location.id;
+  return (
+    <article className={`rounded-3xl border bg-white p-3 shadow-sm ${isSelected ? 'border-skyforce ring-2 ring-sky-100' : 'border-slate-100'}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div><h4 className="text-sm font-bold">{location.name}</h4><p className="text-xs text-slate-500">{location.type} · {location.city}, {location.province}</p></div>
+        <Badge className={accessClass[location.accessBadge]}>{location.accessBadge}</Badge>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2 text-xs"><Badge variant="secondary">{location.status}</Badge><Badge variant={location.priority === 'merah' ? 'destructive' : 'outline'}>Prioritas {location.priority}</Badge></div>
+      <div className="mt-3 grid grid-cols-4 gap-1">
+        <Button size="sm" variant="outline" onClick={() => setSelectedMarkerId(location.id)}>Peta</Button>
+        <Button size="sm" variant="outline" onClick={() => { setSelectedMarkerId(location.id); setSidebarMode('location-detail'); }}>Detail</Button>
+        <Button size="sm" variant="outline" onClick={() => { setSelectedMarkerId(location.id); setSidebarMode('chat-preview'); onOpenChat?.(); }}>Chat</Button>
+        <Button size="sm" variant="outline" onClick={() => { setSelectedMarkerId(location.id); setSidebarMode('access-request'); onRequestAccess?.(); }}>Akses</Button>
+      </div>
+    </article>
+  );
+}
+
+export function SidebarSelectedLocationPanel({ location, onOpenChat, onRequestAccess }: { location: MapLocation; onOpenChat?: () => void; onRequestAccess?: () => void }) {
+  const setSidebarMode = useSidebarMapStore((s) => s.setSidebarMode);
+  return (
+    <section className="mb-4 overflow-hidden rounded-3xl border bg-white shadow-sm">
+      <div className={`p-4 text-white ${location.hasEmergency ? 'bg-red-600' : 'bg-skyforce'}`}>
+        <div className="flex items-start gap-3"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/20"><Building2 className="h-7 w-7" /></div><div><h3 className="font-bold">{location.name}</h3><p className="text-sm text-white/80">{location.type} · {location.kotama}</p></div></div>
+      </div>
+      <div className="space-y-3 p-4 text-sm">
+        <p>{location.address}</p>
+        <p><b>Jam:</b> {location.operationalHours}</p>
+        <p><b>Layanan:</b> {location.services.join(' · ')}</p>
+        <div className="grid grid-cols-2 gap-2"><Badge>{location.staffOnline} petugas online</Badge><Badge variant="secondary">Antrean {location.queueEstimate}</Badge></div>
+        <Badge className={accessClass[location.accessBadge]}>Status akses: {location.accessBadge}</Badge>
+        <div className="grid grid-cols-2 gap-2">
+          <Button size="sm" variant="outline">Buka Detail</Button><Button size="sm">Mulai Konsultasi</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('chat-preview'); onOpenChat?.(); }}>Chat Admin</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('chat-preview'); onOpenChat?.(); }}>Chat Dokter</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('access-request'); onRequestAccess?.(); }}>Minta Akses</Button><Button size="sm" variant="outline"><Route className="h-4 w-4" /> Rute</Button><Button size="sm" variant="outline" className="col-span-2"><Star className="h-4 w-4" /> Tandai Favorit</Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function SidebarAccessStatus() {
+  const selectedMarkerId = useSidebarMapStore((s) => s.selectedMarkerId);
+  const location = mapLocations.find((item) => item.id === selectedMarkerId);
+  const status = location?.accessBadge === 'Darurat' ? 'Emergency access aktif' : location?.accessBadge === 'Akses Diberikan' ? 'Disetujui' : location?.accessBadge === 'Butuh Akses' ? 'Menunggu persetujuan' : 'Belum diajukan';
+  return (
+    <section className="mb-4 rounded-3xl border bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between"><h3 className="font-semibold">Status Akses</h3><Badge className={status.includes('Emergency') ? 'bg-red-100 text-red-700' : status === 'Disetujui' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>{status}</Badge></div>
+      {status === 'Menunggu persetujuan' && <p className="mt-2 text-xs text-slate-500">Diajukan 10 menit lalu untuk alasan konsultasi lanjutan ke admin {location?.name}.</p>}
+    </section>
+  );
+}
+
+export function SidebarChatPreview({ onRequestAccess }: { onRequestAccess?: () => void }) {
+  const selectedMarkerId = useSidebarMapStore((s) => s.selectedMarkerId);
+  const location = mapLocations.find((item) => item.id === selectedMarkerId) ?? mapLocations[0];
+  const hasAccess = location.accessBadge !== 'Butuh Akses' && location.accessBadge !== 'Khusus Admin';
+  return (
+    <section className="mb-4 rounded-3xl border bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between"><div><h3 className="font-semibold">{location.relatedPerson ?? 'Admin Faskes'}</h3><p className="text-xs text-slate-500">{location.name} · {location.status}</p></div><Badge>{hasAccess ? 'Online' : 'Terkunci'}</Badge></div>
+      {hasAccess ? <div className="mt-3 space-y-2 text-sm"><p className="rounded-2xl bg-slate-100 p-2">Halo, ada yang bisa kami bantu?</p><p className="rounded-2xl bg-sky-100 p-2">Saya ingin konsultasi layanan.</p><p className="rounded-2xl bg-slate-100 p-2">Silakan pilih jadwal terdekat.</p><Input placeholder="Tulis pesan singkat..." /><Button size="sm" className="w-full">Buka chat penuh</Button></div> : <div className="mt-3 space-y-2"><p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-800">Anda belum memiliki akses untuk menghubungi petugas ini.</p><div className="grid gap-2"><Button size="sm" onClick={onRequestAccess}>Minta Akses</Button><Button size="sm" variant="outline">Buat Konsultasi</Button><Button size="sm" variant="outline">Pilih Faskes Lain</Button></div></div>}
+    </section>
+  );
+}
+
+export function SidebarAccessRequestList() {
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role.includes('Admin');
+  const requests = [{ patient: 'Serka Bima Pratama', facility: 'RSAU dr. Esnawan Antariksa', reason: 'Kontrol tekanan darah', status: 'Menunggu persetujuan' }, { patient: 'Pratu Andi Saputra', facility: 'IGD RSPAU', reason: 'Demam tinggi dan lemas', status: 'Emergency access aktif' }];
+  return (
+    <section className="mb-4 rounded-3xl border bg-white p-4 shadow-sm">
+      <h3 className="font-semibold">Access Request</h3>
+      {!isAdmin && <p className="mt-2 text-sm text-slate-500">Permintaan akses Anda tampil langsung di sidebar.</p>}
+      {requests.map((request) => <div key={request.patient} className="mt-3 rounded-2xl bg-slate-50 p-3 text-sm"><b>{request.patient}</b><p className="text-xs text-slate-500">{request.facility} · {request.reason}</p><Badge className={request.status.includes('Emergency') ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>{request.status}</Badge>{isAdmin && <div className="mt-2 grid grid-cols-2 gap-2"><Button size="sm">Setujui</Button><Button size="sm" variant="outline">Tolak</Button><Button size="sm" variant="outline">Detail pasien</Button><Button size="sm" variant="outline">Buka chat</Button></div>}</div>)}
+    </section>
+  );
+}
+
+const navItems = [
+  { to: '/app/maps', label: 'Maps', icon: Map, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan', 'Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
+  { to: '/app/needs', label: 'Kebutuhan Pasien', icon: HeartPulse, roles: ['Pasien'] },
+  { to: '/app/consultations', label: 'Konsultasi', icon: Stethoscope, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan'] },
+  { to: '/app/messages', label: 'Pesan', icon: MessageSquare, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan', 'Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
+  { to: '/app/units', label: 'Jajaran & Faskes', icon: Building2, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan', 'Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
+  { to: '/app/profile', label: 'Profil', icon: User, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan', 'Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
+  { to: '/doctor/dashboard', label: 'Dashboard Dokter', icon: Activity, roles: ['Dokter', 'Perawat/Tenaga Kesehatan'] },
+  { to: '/admin/dashboard', label: 'Dashboard Admin', icon: ShieldCheck, roles: ['Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
+  { to: '/app/profile', label: 'Pengaturan', icon: Settings, roles: ['Pasien', 'Dokter', 'Perawat/Tenaga Kesehatan', 'Admin Klinik/Satuan', 'Admin Puskesau/Pusat', 'Super Admin'] },
+] satisfies { to: string; label: string; icon: typeof Map; roles: Role[] }[];
+
+export function SidebarNavigation() {
+  const user = useAuthStore((s) => s.user);
+  const role = user?.role ?? 'Pasien';
+  return <nav className="border-t bg-white p-3"><div className="grid gap-1">{navItems.filter((item) => item.roles.includes(role)).map(({ to, label, icon: Icon }) => <NavLink key={label} to={to} className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold ${isActive ? 'bg-skyforce text-white' : 'text-slate-600 hover:bg-sky-50'}`}><Icon className="h-4 w-4" />{label}</NavLink>)}</div></nav>;
+}
+
+function CollapsedNav() {
+  const user = useAuthStore((s) => s.user);
+  const role = user?.role ?? 'Pasien';
+  return <nav className="flex flex-col gap-2">{navItems.filter((item) => item.roles.includes(role)).slice(0, 7).map(({ to, label, icon: Icon }) => <NavLink key={label} to={to} title={label} className={({ isActive }) => `relative grid h-11 w-11 place-items-center rounded-2xl ${isActive ? 'bg-skyforce text-white' : 'text-slate-500 hover:bg-sky-50'}`}><Icon className="h-5 w-5" />{['Pesan', 'Dashboard Admin'].includes(label) && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />}</NavLink>)}</nav>;
+}
+
+export function SidebarCollapseButton() {
+  const isCollapsed = useSidebarMapStore((s) => s.isCollapsed);
+  const setCollapsed = useSidebarMapStore((s) => s.setCollapsed);
+  return <Button aria-label="Toggle sidebar" variant="outline" size="icon" className="h-9 w-9 bg-white/90 text-slate-700" onClick={() => setCollapsed(!isCollapsed)}>{isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}</Button>;
+}
+
+export function MobileMapsBottomSheet({ onOpenChat, onRequestAccess }: { onOpenChat?: () => void; onRequestAccess?: () => void }) {
+  const sidebarMode = useSidebarMapStore((s) => s.sidebarMode);
+  const setSidebarMode = useSidebarMapStore((s) => s.setSidebarMode);
+  const selectedMarkerId = useSidebarMapStore((s) => s.selectedMarkerId);
+  const locations = useFilteredMapLocations();
+  const selected = mapLocations.find((location) => location.id === selectedMarkerId);
+  return (
+    <div className="fixed inset-x-0 bottom-14 z-30 rounded-t-3xl border bg-white p-4 shadow-2xl lg:hidden">
+      <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-slate-300" />
+      <div className="mb-3 flex items-center justify-between"><b>Maps Sidebar</b><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => setSidebarMode('search')}><Search className="h-4 w-4" /></Button><Button size="sm" variant="outline" onClick={() => setSidebarMode('filter')}>Filter</Button><Button size="sm" variant="ghost" onClick={() => setSidebarMode('navigation')}><X className="h-4 w-4" /></Button></div></div>
+      {sidebarMode === 'filter' && <SidebarFilter />}
+      {sidebarMode === 'chat-preview' && <SidebarChatPreview onRequestAccess={onRequestAccess} />}
+      {selected && sidebarMode === 'location-detail' && <SidebarSelectedLocationPanel location={selected} onOpenChat={onOpenChat} onRequestAccess={onRequestAccess} />}
+      {(sidebarMode === 'search' || sidebarMode === 'navigation' || sidebarMode === 'emergency') && <><SidebarSearch locations={locations} /><div className="mt-3 max-h-[42vh] overflow-auto"><SidebarLocationList locations={locations} onOpenChat={onOpenChat} onRequestAccess={onRequestAccess} /></div></>}
+    </div>
+  );
+}
+
+export function SidebarMapMarker({ location, index }: { location: MapLocation; index: number }) {
+  const selectedMarkerId = useSidebarMapStore((s) => s.selectedMarkerId);
+  const setSelectedMarkerId = useSidebarMapStore((s) => s.setSelectedMarkerId);
+  const isSelected = selectedMarkerId === location.id;
+  return (
+    <button title={location.name} onClick={() => setSelectedMarkerId(location.id)} className={`absolute grid h-8 w-8 place-items-center rounded-full border-2 border-white text-white shadow-lg transition ${isSelected ? 'z-20 scale-125 bg-red-600 ring-4 ring-red-100' : location.hasEmergency ? 'bg-red-500' : 'bg-skyforce hover:scale-110'}`} style={{ left: `${8 + (index * 17) % 82}%`, top: `${12 + (index * 23) % 70}%` }}>
+      {location.hasEmergency ? <Ambulance className="h-4 w-4" /> : <Map className="h-4 w-4" />}
+    </button>
+  );
+}
