@@ -43,21 +43,32 @@ export function ChatRoom({ chat }: { chat: Chat }) {
   }
 
   return (
-    <div className="flex h-[72vh] flex-col rounded-xl border bg-white">
-      <div className="space-y-3 border-b p-4">
-        <div><b>{chat.title}</b>
-        <p className="text-xs text-muted-foreground">{chat.participants.join(' · ')} · Clinical Chat aman</p></div>
+    <div className="flex h-[calc(100svh-12rem)] min-h-[32rem] flex-col overflow-hidden rounded-xl border bg-white sm:h-[72vh]">
+      <div className="max-h-[42svh] space-y-3 overflow-y-auto border-b p-3 sm:max-h-none sm:p-4">
+        <div className="min-w-0">
+          <b className="block truncate">{chat.title}</b>
+          <p className="text-xs text-muted-foreground">{chat.participants.join(' · ')} · Clinical Chat aman</p>
+        </div>
         <ClinicalContextHeader priority={chat.priority} />
-        <div className="flex flex-wrap gap-2"><ConsentModal /><SoapNoteDrawer /><Button size="sm" variant="outline">Buat Resep Simulasi</Button><Button size="sm" variant="outline">Buat Rujukan</Button><Button size="sm" variant="outline">Jadwalkan Follow-up</Button><SpecialistTeleconferenceModal /><Button size="sm" variant="destructive">Tandai Darurat</Button><Button size="sm">Tutup Konsultasi</Button></div>
+        <div className="flex flex-wrap gap-2">
+          <ConsentModal />
+          <SoapNoteDrawer />
+          <Button size="sm" variant="outline">Buat Resep Simulasi</Button>
+          <Button size="sm" variant="outline">Buat Rujukan</Button>
+          <Button size="sm" variant="outline">Jadwalkan Follow-up</Button>
+          <SpecialistTeleconferenceModal />
+          <Button size="sm" variant="destructive">Tandai Darurat</Button>
+          <Button size="sm">Tutup Konsultasi</Button>
+        </div>
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      <div className="flex-1 space-y-3 overflow-y-auto p-3 sm:p-4">
         {chat.messages.map((message) => <MessageBubble key={message.id} m={message} />)}
         {typing && <p className="text-sm text-muted-foreground">Dokter sedang mengetik...</p>}
       </div>
-      <div className="flex flex-wrap gap-2 border-t p-3">
+      <div className="grid gap-2 border-t p-3 sm:grid-cols-[auto_1fr_auto]">
         <AttachmentUploader onPick={send} />
         <Input
-          className="min-w-48 flex-1"
+          className="min-w-0"
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {

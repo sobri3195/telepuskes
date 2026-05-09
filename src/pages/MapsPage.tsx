@@ -183,13 +183,13 @@ function MapView({ onOpenChat, onRequestAccess }: { onOpenChat: () => void; onRe
   const emergencyFacilities = useMemo(() => locations.filter((location) => location.hasEmergency).slice(0, 4), [locations]);
 
   return (
-    <section className="relative min-h-[calc(100vh-8rem)] overflow-hidden rounded-[2rem] border bg-sky-100 shadow-sm lg:min-h-[calc(100vh-9rem)]">
+    <section className="relative min-h-[68svh] overflow-hidden rounded-3xl border bg-sky-100 shadow-sm sm:min-h-[calc(100vh-8rem)] lg:min-h-[calc(100vh-9rem)]">
       <LeafletIndonesiaMap locations={locations} />
       <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(15,23,42,.06),transparent_22%,transparent_76%,rgba(15,23,42,.08))]" />
-      <div className="absolute left-5 top-5 z-10 max-w-sm rounded-3xl border bg-white/95 p-4 shadow-lg backdrop-blur">
+      <div className="absolute left-3 right-3 top-3 z-10 rounded-3xl border bg-white/95 p-3 shadow-lg backdrop-blur sm:left-5 sm:right-auto sm:top-5 sm:max-w-sm sm:p-4">
         <div className="flex flex-wrap items-center gap-2"><Badge>Leaflet Indonesia</Badge><Badge variant="secondary">{locations.length} marker aktif</Badge></div>
-        <h1 className="mt-2 text-2xl font-bold">Health Command Map</h1>
-        <p className="text-sm text-slate-600">Military Health Command Map untuk faskes TNI AU, Lanud, dokter, kasus aktif, emergency, rujukan, RME ringkas, dan teleconference spesialis.</p>
+        <h1 className="mt-2 text-xl font-bold sm:text-2xl">Health Command Map</h1>
+        <p className="line-clamp-2 text-sm text-slate-600 sm:line-clamp-none">Military Health Command Map untuk faskes TNI AU, Lanud, dokter, kasus aktif, emergency, rujukan, RME ringkas, dan teleconference spesialis.</p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button size="sm" variant="destructive" onClick={() => { setShowOnlyEmergencyFacilities(true); setSidebarMode('emergency'); setSelectedMarkerId(emergencyFacilities[0]?.id); }}><Ambulance className="h-4 w-4" /> Darurat</Button>
           <Button size="sm" variant="outline" onClick={() => selected && setSelectedMarkerId(selected.id)}><LocateFixed className="h-4 w-4" /> Fokus</Button>
@@ -197,14 +197,14 @@ function MapView({ onOpenChat, onRequestAccess }: { onOpenChat: () => void; onRe
       </div>
 
       {selected && (
-        <aside className="absolute bottom-5 right-5 z-10 w-[min(26rem,calc(100%-2.5rem))] rounded-3xl border bg-white/95 p-4 shadow-xl backdrop-blur">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-sky-100 text-skyforce"><Building2 className="h-6 w-6" /></div><div><h2 className="font-bold">{selected.name}</h2><p className="text-sm text-slate-500">{selected.type} · {selected.city}, {selected.province}</p></div></div>
+        <aside className="absolute bottom-3 left-3 right-3 z-10 rounded-3xl border bg-white/95 p-3 shadow-xl backdrop-blur sm:bottom-5 sm:left-auto sm:right-5 sm:w-[min(26rem,calc(100%-2.5rem))] sm:p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 items-start gap-3"><div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sky-100 text-skyforce"><Building2 className="h-6 w-6" /></div><div className="min-w-0"><h2 className="truncate font-bold">{selected.name}</h2><p className="text-sm text-slate-500">{selected.type} · {selected.city}, {selected.province}</p></div></div>
             <Badge variant={selected.hasEmergency ? 'destructive' : 'default'}>{selected.status}</Badge>
           </div>
           <p className="mt-3 text-sm text-slate-600">{selected.address}</p>
           <div className="mt-3 flex flex-wrap gap-2"><Badge>{selected.kotama}</Badge><Badge variant="secondary">{selected.staffOnline} petugas online</Badge><Badge variant="outline">{selected.accessBadge}</Badge></div>
-          <div className="mt-4 grid grid-cols-3 gap-2"><Button size="sm" onClick={() => setSidebarMode('location-detail')}>Detail</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('chat-preview'); onOpenChat(); }}><MessageSquare className="h-4 w-4" /> Chat</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('access-request'); onRequestAccess(); }}><ShieldCheck className="h-4 w-4" /> Akses</Button></div>
+          <div className="mt-4 grid grid-cols-1 gap-2 min-[380px]:grid-cols-3"><Button size="sm" onClick={() => setSidebarMode('location-detail')}>Detail</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('chat-preview'); onOpenChat(); }}><MessageSquare className="h-4 w-4" /> Chat</Button><Button size="sm" variant="outline" onClick={() => { setSidebarMode('access-request'); onRequestAccess(); }}><ShieldCheck className="h-4 w-4" /> Akses</Button></div>
         </aside>
       )}
 
@@ -225,7 +225,7 @@ export function MapsPage() {
   };
 
   return (
-    <div className="space-y-4 pb-64 lg:pb-4">
+    <div className="space-y-4 pb-72 lg:pb-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-skyforce">Command center</p>
