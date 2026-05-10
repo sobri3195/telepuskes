@@ -11,6 +11,7 @@ import {
   Route,
   Search,
   Settings,
+  ShieldCheck,
   Star,
   Stethoscope,
   User,
@@ -25,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mapLocations, type AccessBadge, type MapLocation } from '@/data/mapLocations';
 import { organizationRoots } from '@/data/mockData';
+import { getRoleHome, isAdminRole, isClinicalRole } from '@/lib/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { useSidebarMapStore } from '@/stores/sidebarMapStore';
 import type { Role } from '@/types';
@@ -300,20 +302,26 @@ export function SidebarAccessRequestList() {
   );
 }
 
-const navItems = [
-  { to: '/app/consultations', label: 'Konsultasi', icon: Stethoscope },
-  { to: '/app/messages', label: 'Pesan', icon: MessageSquare },
-  { to: '/app/units', label: 'Jajaran & Faskes', icon: Building2 },
-  { to: '/app/profile', label: 'Profil', icon: User },
-  { to: '/doctor/dashboard', label: 'Dashboard Dokter', icon: Activity },
-  { to: '/app/profile', label: 'Pengaturan', icon: Settings },
-] satisfies { to: string; label: string; icon: typeof Map }[];
+function getNavItems(role?: Role) {
+  return [
+    { to: getRoleHome(role), label: isAdminRole(role) ? 'Dashboard Admin' : isClinicalRole(role) ? 'Dashboard Dokter' : 'Dashboard', icon: isAdminRole(role) ? ShieldCheck : isClinicalRole(role) ? Activity : Map },
+    { to: '/app/consultations', label: 'Konsultasi', icon: Stethoscope },
+    { to: '/app/messages', label: 'Pesan', icon: MessageSquare },
+    { to: isAdminRole(role) ? '/admin/units' : '/app/units', label: 'Jajaran & Faskes', icon: Building2 },
+    { to: '/app/profile', label: 'Profil', icon: User },
+    { to: '/app/profile', label: 'Pengaturan', icon: Settings },
+  ] satisfies { to: string; label: string; icon: typeof Map }[];
+}
 
 export function SidebarNavigation() {
+  const role = useAuthStore((state) => state.user?.role);
+  const navItems = getNavItems(role);
   return <nav className="flex-1 overflow-y-auto p-3"><div className="grid gap-1">{navItems.map(({ to, label, icon: Icon }) => <NavLink key={label} to={to} className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold ${isActive ? 'bg-skyforce text-white' : 'text-slate-600 hover:bg-sky-50'}`}><Icon className="h-4 w-4" />{label}</NavLink>)}</div></nav>;
 }
 
 function CollapsedNav() {
+  const role = useAuthStore((state) => state.user?.role);
+  const navItems = getNavItems(role);
   return <nav className="flex flex-col gap-2">{navItems.map(({ to, label, icon: Icon }) => <NavLink key={label} to={to} title={label} className={({ isActive }) => `grid h-11 w-11 place-items-center rounded-2xl ${isActive ? 'bg-skyforce text-white' : 'text-slate-500 hover:bg-sky-50'}`}><Icon className="h-5 w-5" /></NavLink>)}</nav>;
 }
 
