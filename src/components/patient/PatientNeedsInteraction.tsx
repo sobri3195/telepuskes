@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useConsultationStore } from '@/stores/consultationStore';
 import { usePatientNeedStore } from '@/stores/patientNeedStore';
 import type { PatientNeedType } from '@/types';
-import { AdaptiveQuestionnaire } from './AdaptiveQuestionnaire';
+import { AdaptiveQuestionnaire, getMissingRequiredFields } from './AdaptiveQuestionnaire';
 import { NeedSelectionCard } from './NeedSelectionCard';
 import { TriageResultCard } from './TriageResultCard';
 
@@ -19,7 +19,9 @@ export function PatientNeedsInteraction() {
   const [answers, setAnswers] = useState<Record<string, string | boolean>>({});
   const [attachments, setAttachments] = useState<string[]>([]);
   const [chatId, setChatId] = useState<string>();
+  const [error, setError] = useState('');
   const [result, setResult] = useState<ReturnType<typeof evaluateTriage>>();
+  const hasSubmittedEmergency = useRef(false);
   const addNeed = usePatientNeedStore((s) => s.addNeed);
   const addConsultation = useConsultationStore((s) => s.addConsultation);
   const upsertChat = useChatStore((s) => s.upsertChat);
@@ -30,14 +32,25 @@ export function PatientNeedsInteraction() {
   }, [params]);
 
   useEffect(() => {
-    if (type === 'Pertolongan darurat') submit('Pertolongan darurat');
+    if (type === 'Pertolongan darurat' && !hasSubmittedEmergency.current) {
+      hasSubmittedEmergency.current = true;
+      submit('Pertolongan darurat');
+    }
   }, [type]);
 
   function submit(force?: PatientNeedType) {
     const selected = force || type;
     if (!selected) return;
 
-    const triage = evaluateTriage(selected, answers, facilities[0].id);
+    const missingFields = selected === 'Pertolongan darurat' ? [] : getMissingRequiredFields(selected, answers);
+    if (missingFields.length > 0) {
+      setError(`Lengkapi terlebih dahulu: ${missingFields.join(', ')}.`);
+      return;
+    }
+
+    setError('');
+    const selectedFacilityId = typeof answers.faskesTujuan === 'string' && answers.faskesTujuan ? answers.faskesTujuan : facilities[0].id;
+    const triage = evaluateTriage(selected, answers, selectedFacilityId);
     const id = crypto.randomUUID();
     const need = {
       id: `need-${id}`,
@@ -121,6 +134,7 @@ export function PatientNeedsInteraction() {
               <Button variant="outline" onClick={() => setType(undefined)}>Kembali</Button>
               <Button onClick={() => submit()}>Lihat hasil triase</Button>
             </div>
+            {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           </CardContent>
         </Card>
       )}

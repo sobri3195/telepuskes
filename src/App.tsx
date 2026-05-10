@@ -12,6 +12,7 @@ import { PatientNeedsPage } from '@/pages/PatientNeedsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { UnitsDirectoryPage } from '@/pages/UnitsDirectoryPage';
+import { getRoleHome } from '@/lib/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import type { Role } from '@/types';
 
@@ -19,15 +20,21 @@ function Protected({ roles }: { roles?: Role[] }) {
   const user = useAuthStore((s) => s.user);
 
   if (!user) return <Navigate to="/login" replace />;
-  if (roles && !roles.includes(user.role)) return <Navigate to="/app/dashboard" replace />;
+  if (roles && !roles.includes(user.role)) return <Navigate to={getRoleHome(user.role)} replace />;
 
   return <WebAppShell />;
+}
+
+function RootRedirect() {
+  const user = useAuthStore((s) => s.user);
+
+  return <Navigate to={user ? getRoleHome(user.role) : '/login'} replace />;
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
@@ -56,6 +63,7 @@ export default function App() {
         <Route path="/admin/facilities" element={<UnitsDirectoryPage />} />
         <Route path="/admin/reports" element={<AdminDashboardPage />} />
       </Route>
+      <Route path="*" element={<RootRedirect />} />
     </Routes>
   );
 }
