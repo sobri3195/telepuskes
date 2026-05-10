@@ -301,7 +301,6 @@ export function SidebarAccessRequestList() {
 }
 
 const navItems = [
-  { to: '/app/maps', label: 'Maps', icon: Map },
   { to: '/app/consultations', label: 'Konsultasi', icon: Stethoscope },
   { to: '/app/messages', label: 'Pesan', icon: MessageSquare },
   { to: '/app/units', label: 'Jajaran & Faskes', icon: Building2 },
